@@ -97,3 +97,14 @@ docker compose down
 - **Nuevo evento:** agregar la constante en `common/events.py`.
 - **Nuevo servicio:** crear `services/x_service.py` con un `handle(event)` y llamar a
   `run_service(...)`; añadir su bloque en `docker-compose.yml`.
+
+## Uso de IA
+
+Para esta tarea utilicé **Claude** como herramienta de apoyo. Lo usé para:
+
+- Generar la estructura inicial del proyecto y le di la organización de modulos (`common/`, `services/`).
+- Escribir el código de los servicios, la conexión a RabbitMQ con `pika` y el registro de eventos en el log.
+- Redactar el `Dockerfile`, el `docker-compose.yml` y este README.
+
+Yo definí los requisitos y el flujo a simular (OrderPlaced, PaymentApplied, OrderFulfilled, EmailSent), y moldée la solución a una implementación simple, claramente con bajo acoplamiento y pues la facilidad de modificar. Después revisé el funcionamiento del sistema para poder explicarlo y probé la ejecución con:
+`docker compose run --rm app python place_order.py`.

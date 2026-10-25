@@ -1,0 +1,57 @@
+x-service: &service
+  build: .
+  image: orders-app
+  environment:
+    RABBITMQ_HOST: rabbitmq
+    LOG_FILE: /logs/events.log
+  volumes:
+    - ./logs:/logs
+
+x-ready: &ready
+  test: ["CMD", "test", "-f", "/tmp/ready"]
+  interval: 2s
+  timeout: 2s
+  retries: 30
+
+services:
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    ports:
+      - "15672:15672"   # UI de administración (guest / guest)
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 5s
+      timeout: 10s
+      retries: 20
+
+  payment-service:
+    <<: *service
+    command: python -m services.payment_service
+    depends_on:
+      rabbitmq: { condition: service_healthy }
+    healthcheck: *ready
+
+  fulfillment-service:
+    <<: *service
+    command: python -m services.fulfillment_service
+    depends_on:
+      rabbitmq: { condition: service_healthy }
+    healthcheck: *ready
+
+  notification-service:
+    <<: *service
+    command: python -m services.notification_service
+    depends_on:
+      rabbitmq: { condition: service_healthy }
+    healthcheck: *ready
+
+  # Order placement (evento inicial):
+  #   docker compose run --rm app python place_order.py
+  app:
+    <<: *service
+    profiles: ["tools"]
+    command: python place_order.py
+    depends_on:
+      payment-service: { condition: service_healthy }
+      fulfillment-service: { condition: service_healthy }
+      notification-service: { condition: service_healthy }
